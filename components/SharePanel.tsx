@@ -88,7 +88,6 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
             <span className="person"><strong>{doc.ownerName}</strong></span>
             <span className="badge owner">Owner</span>
           </li>
-          {shares === null && <li className="muted">Loading…</li>}
           {shares?.map((s) => (
             <li key={s.userId}>
               <span className="avatar sm">{initials(s.name)}</span>
@@ -125,6 +124,9 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
             </li>
           ))}
         </ul>
+        {/* No loading placeholder: the owner row is known up front and shared rows just appear,
+            so an unshared doc doesn't flash a row that immediately disappears. */}
+        {isOwner && shares?.length === 0 && <p className="muted small">Not shared with anyone yet.</p>}
         {!isOwner && <p className="muted small">Only the owner can change who has access.</p>}
       </aside>
     </>
