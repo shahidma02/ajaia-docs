@@ -10,6 +10,7 @@ type Patch = { title?: string; content?: string };
 
 const SAVE_DELAY_MS = 800; // save once typing pauses…
 const MAX_WAIT_MS = 5000; // …but at least this often during non-stop typing
+const KEEPALIVE_MAX_BYTES = 64_000; // browsers reject keepalive request bodies over 64 KiB
 
 // Debounced autosave for one document. Edits accumulate in `pending` and are sent one request at a
 // time with the version the client last saw; a 409 means someone else saved first (no silent overwrite).
@@ -39,10 +40,13 @@ export function useAutosave(docId: string) {
       // Retry transient failures (network / 5xx) with backoff; 4xx won't fix itself, so surface it.
       for (let attempt = 0; ; attempt++) {
         try {
+          const body = { ...patch, version: version.current };
           const saved = await api<Doc>(`/api/documents/${docId}`, {
             method: "PATCH",
-            body: { ...patch, version: version.current },
-            keepalive: true, // let the last save finish if the user navigates away
+            body,
+            // keepalive lets the last save finish if the user navigates away, but browsers reject
+            // keepalive bodies over 64 KB, so large documents save as a normal request.
+            keepalive: new TextEncoder().encode(JSON.stringify(body)).length < KEEPALIVE_MAX_BYTES,
           });
           version.current = saved.version;
           setStatus(Object.keys(pending.current).length ? "dirty" : "saved");

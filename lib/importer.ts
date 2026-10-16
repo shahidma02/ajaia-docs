@@ -23,7 +23,12 @@ export async function fileToDoc(name: string, bytes: Buffer): Promise<{ title: s
 
   if (ext === ".docx") {
     try {
-      const { value } = await mammoth.convertToHtml({ buffer: bytes });
+      // Images are dropped: the editor has no image support, and inlining them as base64 can push
+      // a small .docx past the document size limit.
+      const { value } = await mammoth.convertToHtml(
+        { buffer: bytes },
+        { convertImage: mammoth.images.imgElement(async () => ({ src: "" })) },
+      );
       return { title, html: value };
     } catch {
       throw new HttpError(400, "Could not read that .docx file. Is it a valid Word document?");
