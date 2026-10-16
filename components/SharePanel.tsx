@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Icon, { initials } from "@/components/Icon";
+import { X } from "lucide-react";
 import { toast } from "sonner";
-import { api, errorMessage } from "@/lib/client";
+import { api, errorMessage, initials } from "@/lib/client";
 import type { Doc, Share, User } from "@/lib/docs";
 
 export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => void }) {
@@ -46,7 +46,7 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
         <div className="panel-head">
           <h2>{isOwner ? "Share" : "People with access"}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close sharing panel">
-            <Icon name="close" />
+            <X size={18} />
           </button>
         </div>
         <p className="muted panel-sub">{doc.title}</p>
@@ -115,7 +115,7 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
                     aria-label={`Remove ${s.name}`}
                     onClick={() => mutate("DELETE", { userId: s.userId }, `Removed ${s.name}`)}
                   >
-                    <Icon name="close" size={16} />
+                    <X size={16} />
                   </button>
                 </span>
               ) : (

@@ -3,7 +3,7 @@
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { ReactNode } from "react";
-import Icon from "./Icon";
+import { List, ListOrdered, Redo2, Undo2 } from "lucide-react";
 
 export default function Editor({
   content,
@@ -75,8 +75,8 @@ function Toolbar({ editor }: { editor: TiptapEditor }) {
 
   return (
     <div className="toolbar" role="toolbar" aria-label="Formatting">
-      {btn(<Icon name="undo" />, "Undo (⌘Z)", false, () => chain().undo().run(), !s.canUndo)}
-      {btn(<Icon name="redo" />, "Redo (⌘⇧Z)", false, () => chain().redo().run(), !s.canRedo)}
+      {btn(<Undo2 size={18} />, "Undo (⌘Z)", false, () => chain().undo().run(), !s.canUndo)}
+      {btn(<Redo2 size={18} />, "Redo (⌘⇧Z)", false, () => chain().redo().run(), !s.canRedo)}
       <span className="sep" />
       <select aria-label="Text style" value={s.block} onChange={(e) => setBlock(e.target.value)}>
         <option value="p">Normal text</option>
@@ -89,8 +89,8 @@ function Toolbar({ editor }: { editor: TiptapEditor }) {
       {btn("I", "Italic (⌘I)", s.italic, () => chain().toggleItalic().run())}
       {btn("U", "Underline (⌘U)", s.underline, () => chain().toggleUnderline().run())}
       <span className="sep" />
-      {btn(<Icon name="list" />, "Bulleted list", s.bullet, () => chain().toggleBulletList().run())}
-      {btn(<Icon name="listOrdered" />, "Numbered list", s.ordered, () => chain().toggleOrderedList().run())}
+      {btn(<List size={18} />, "Bulleted list", s.bullet, () => chain().toggleBulletList().run())}
+      {btn(<ListOrdered size={18} />, "Numbered list", s.ordered, () => chain().toggleOrderedList().run())}
     </div>
   );
 }

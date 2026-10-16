@@ -1,10 +1,10 @@
 "use client";
 
+import { ArrowLeft, Check, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Editor from "@/components/Editor";
-import Icon from "@/components/Icon";
 import SharePanel from "@/components/SharePanel";
 import { toast } from "sonner";
 import { api, ApiError, errorMessage } from "@/lib/client";
@@ -124,7 +124,7 @@ export default function DocumentPage() {
       <main className="center">
         <div className="card stack">
           <p className="error">{loadError}</p>
-          <Link href="/" className="row"><Icon name="back" /> Back to documents</Link>
+          <Link href="/" className="row"><ArrowLeft size={18} /> Back to documents</Link>
         </div>
       </main>
     );
@@ -137,7 +137,7 @@ export default function DocumentPage() {
     <>
       <header className="doc-header">
         <Link href="/" className="icon-btn" title="All documents" aria-label="Back to all documents">
-          <Icon name="back" size={20} />
+          <ArrowLeft size={20} />
         </Link>
         <input
           className="title-input"
@@ -157,14 +157,14 @@ export default function DocumentPage() {
           }}
         />
         <span className={`status ${status}`} aria-live="polite">
-          {status === "saved" && editable && <Icon name="check" size={14} />}
+          {status === "saved" && editable && <Check size={14} />}
           {!editable ? "View only" : saveError ? `Not saved: ${saveError}` : STATUS_TEXT[status]}
         </span>
         <span className={`badge ${doc.role}`}>
           {doc.role === "owner" ? "Owner" : doc.role === "editor" ? "Shared · can edit" : "Shared · can view"}
         </span>
         <button className="primary" onClick={() => setShowShare((v) => !v)} aria-expanded={showShare}>
-          <Icon name={doc.role === "owner" ? "share" : "users"} size={16} />
+          {doc.role === "owner" ? <UserPlus size={16} /> : <Users size={16} />}
           {doc.role === "owner" ? "Share" : "People"}
         </button>
       </header>

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Icon, { initials } from "@/components/Icon";
+import { FileText, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { api, errorMessage } from "@/lib/client";
+import { api, errorMessage, initials } from "@/lib/client";
 import type { Doc, DocSummary, User } from "@/lib/docs";
 
 type Session = { user: User | null; users: User[] };
@@ -101,7 +101,7 @@ export default function Home() {
       <main className="center">
         <div className="card signin">
           <div className="brand">
-            <span className="logo-mark"><Icon name="file" size={20} /></span>
+            <span className="logo-mark"><FileText size={20} /></span>
             <h1>Ajaia Docs</h1>
           </div>
           <p className="muted">Choose a demo account to continue. This is mock sign-in for review, so there are no passwords.</p>
@@ -125,7 +125,7 @@ export default function Home() {
     <>
       <header className="app-header">
         <span className="brand">
-          <span className="logo-mark"><Icon name="file" size={18} /></span>
+          <span className="logo-mark"><FileText size={18} /></span>
           <span className="logo">Ajaia Docs</span>
         </span>
         <label className="user-switch">
@@ -142,10 +142,10 @@ export default function Home() {
       <main className="home">
         <div className="actions">
           <button className="primary" disabled={busy} onClick={createDoc}>
-            <Icon name="plus" /> New document
+            <Plus size={18} /> New document
           </button>
           <button disabled={busy} onClick={() => fileInput.current?.click()}>
-            <Icon name="upload" /> Import file
+            <Upload size={18} /> Import file
           </button>
           <input
             ref={fileInput}
@@ -191,7 +191,7 @@ function DocSection({
           {docs.map((d) => (
             <li key={d.id}>
               <Link href={`/documents/${d.id}`} className="doc-link">
-                <span className="doc-icon"><Icon name="file" /></span>
+                <span className="doc-icon"><FileText size={18} /></span>
                 <span className="doc-text">
                   <span className="doc-title">{d.title}</span>
                   <span className="muted">
@@ -202,7 +202,7 @@ function DocSection({
               {d.role !== "owner" && <span className={`badge ${d.role}`}>{d.role === "editor" ? "Can edit" : "Can view"}</span>}
               {onDelete && (
                 <button className="icon-btn" onClick={() => onDelete(d)} title="Delete" aria-label={`Delete ${d.title}`}>
-                  <Icon name="trash" />
+                  <Trash2 size={18} />
                 </button>
               )}
             </li>
