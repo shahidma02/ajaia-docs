@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Editor from "@/components/Editor";
 import SharePanel from "@/components/SharePanel";
+import Spinner from "@/components/Spinner";
 import { toast } from "sonner";
 import { api, ApiError, errorMessage } from "@/lib/client";
 import type { Doc } from "@/lib/docs";
@@ -129,7 +130,7 @@ export default function DocumentPage() {
       </main>
     );
   }
-  if (!doc) return <main className="center"><p className="muted">Loading document…</p></main>;
+  if (!doc) return <main className="center"><Spinner label="Loading document" /></main>;
 
   const editable = doc.role !== "viewer";
 

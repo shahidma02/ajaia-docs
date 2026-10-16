@@ -136,6 +136,11 @@ input[type="email"] {
 .badge.editor { background: #ecfdf3; border-color: #abefc6; color: var(--ok); }
 .badge.viewer { background: #fffaeb; border-color: #fedf89; color: #b54708; }
 
+.spinner { display: inline-flex; color: var(--accent); }
+.spinner svg { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner svg { animation-duration: 2.4s; } }
+
 /* Sign-in */
 .signin p { margin: 12px 0 20px; }
 .user-pick { width: 100%; gap: 12px; padding: 10px 14px; text-align: left; border-color: var(--border); }

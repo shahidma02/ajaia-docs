@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import Spinner from "@/components/Spinner";
 import { api, errorMessage, initials } from "@/lib/client";
 import type { Doc, DocSummary, User } from "@/lib/docs";
 
@@ -90,7 +91,7 @@ export default function Home() {
             <button onClick={() => location.reload()}>Try again</button>
           </div>
         ) : (
-          <p className="muted">Loading…</p>
+          <Spinner />
         )}
       </main>
     );
@@ -183,7 +184,7 @@ function DocSection({
     <section>
       <h2>{title}</h2>
       {!docs ? (
-        <p className="muted">Loading…</p>
+        <Spinner size={22} />
       ) : docs.length === 0 ? (
         <p className="muted empty">{empty}</p>
       ) : (
