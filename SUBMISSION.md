@@ -6,7 +6,7 @@
 
 |                       |                                          |
 | --------------------- | ---------------------------------------- |
-| **Live app**          | https://YOUR-APP.vercel.app              |
+| **Live app**          | https://ajaia-docs-puce.vercel.app/      |
 | **Walkthrough video** | See [`VIDEO_URL.txt`](VIDEO_URL.txt)     |
 | **Source (GitHub)**   | https://github.com/shahidma02/ajaia-docs |
 

@@ -2,13 +2,13 @@
 
 A lightweight collaborative document editor: create and format documents, import files, and share them with other users as editors or viewers.
 
-**Live demo:** https://YOUR-APP.vercel.app
+**Live demo:** https://ajaia-docs-puce.vercel.app/
 
-| Demo account | Email | Notes |
-|---|---|---|
-| Alice Chen | `alice@ajaia.test` | Owns the "Welcome to Ajaia Docs" document |
-| Bob Okafor | `bob@ajaia.test` | Has **edit** access to the Welcome document |
-| Carol Diaz | `carol@ajaia.test` | Starts with no shared documents |
+| Demo account | Email              | Notes                                       |
+| ------------ | ------------------ | ------------------------------------------- |
+| Alice Chen   | `alice@ajaia.test` | Owns the "Welcome to Ajaia Docs" document   |
+| Bob Okafor   | `bob@ajaia.test`   | Has **edit** access to the Welcome document |
+| Carol Diaz   | `carol@ajaia.test` | Starts with no shared documents             |
 
 Sign-in is mocked: pick an account on the start screen (no password). Switch accounts from the dropdown in the top-right to see sharing from the other side.
 
@@ -32,21 +32,21 @@ pnpm dev
 
 Open http://localhost:3000. No database setup or environment variables are needed: locally the app uses a SQLite file (`local.db`) that is created and seeded with the demo accounts on first request. Delete `local.db` (with the server stopped) to reset.
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Start the dev server |
-| `pnpm test` | Run the automated tests (Vitest) |
-| `pnpm lint` | Lint |
-| `pnpm build && pnpm start` | Production build and server |
+| Command                    | What it does                     |
+| -------------------------- | -------------------------------- |
+| `pnpm dev`                 | Start the dev server             |
+| `pnpm test`                | Run the automated tests (Vitest) |
+| `pnpm lint`                | Lint                             |
+| `pnpm build && pnpm start` | Production build and server      |
 
 ## Deployment
 
 Deployed on **Vercel** with a **Turso** database (hosted libSQL, SQLite-compatible), both on free tiers. The same code runs locally and in production; the only difference is two environment variables:
 
-| Variable | Value |
-|---|---|
-| `TURSO_DATABASE_URL` | `libsql://<db-name>-<org>.turso.io` |
-| `TURSO_AUTH_TOKEN` | A read/write token for that database |
+| Variable             | Value                                |
+| -------------------- | ------------------------------------ |
+| `TURSO_DATABASE_URL` | `libsql://<db-name>-<org>.turso.io`  |
+| `TURSO_AUTH_TOKEN`   | A read/write token for that database |
 
 To deploy your own copy: create a Turso database, import this repo into Vercel, add the two variables, and deploy. Tables and demo data are created automatically on the first request.
 
