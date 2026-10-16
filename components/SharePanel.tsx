@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Icon, { initials } from "@/components/Icon";
-import { toast } from "@/components/Toaster";
+import { toast } from "sonner";
 import { api, errorMessage } from "@/lib/client";
 import type { Doc, Share, User } from "@/lib/docs";
 
@@ -16,7 +16,7 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
   const base = `/api/documents/${doc.id}/shares`;
 
   useEffect(() => {
-    api<Share[]>(base).then(setShares, (e) => toast(errorMessage(e)));
+    api<Share[]>(base).then(setShares, (e) => toast.error(errorMessage(e)));
     api<{ users: User[] }>("/api/session").then((s) => setUsers(s.users), () => {});
   }, [base]);
 
@@ -31,9 +31,9 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
     try {
       setShares(await api<Share[]>(base, { method, body }));
       if (method === "POST") setEmail("");
-      toast(success, "success");
+      toast.success(success);
     } catch (e) {
-      toast(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }

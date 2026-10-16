@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon, { initials } from "@/components/Icon";
-import { toast } from "@/components/Toaster";
+import { toast } from "sonner";
 import { api, errorMessage } from "@/lib/client";
 import type { Doc, DocSummary, User } from "@/lib/docs";
 
@@ -30,7 +30,7 @@ export default function Home() {
         })
         .catch((e) => {
           setLoadError(errorMessage(e));
-          toast(errorMessage(e));
+          toast.error(errorMessage(e));
         }),
     [],
   );
@@ -44,7 +44,7 @@ export default function Home() {
     try {
       await action();
     } catch (e) {
-      toast(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -69,7 +69,7 @@ export default function Home() {
       const form = new FormData();
       form.append("file", file);
       const doc = await api<Doc>("/api/documents/import", { method: "POST", form });
-      toast(`Imported “${file.name}”`, "success");
+      toast.success(`Imported “${file.name}”`);
       router.push(`/documents/${doc.id}`);
     });
 
@@ -77,7 +77,7 @@ export default function Home() {
     run(async () => {
       if (!confirm(`Delete “${d.title}”? This cannot be undone.`)) return;
       await api(`/api/documents/${d.id}`, { method: "DELETE" });
-      toast(`Deleted “${d.title}”`, "success");
+      toast.success(`Deleted “${d.title}”`);
       await load();
     });
 

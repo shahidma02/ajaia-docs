@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Editor from "@/components/Editor";
 import Icon from "@/components/Icon";
 import SharePanel from "@/components/SharePanel";
-import { toast } from "@/components/Toaster";
+import { toast } from "sonner";
 import { api, ApiError, errorMessage } from "@/lib/client";
 import type { Doc } from "@/lib/docs";
 
@@ -86,7 +86,7 @@ export default function DocumentPage() {
           }
           pending.current = { ...patch, ...pending.current }; // keep edits; next change retries
           setSaveError(errorMessage(e));
-          toast(`Couldn't save: ${errorMessage(e)}`);
+          toast.error(`Couldn't save: ${errorMessage(e)}`);
           setStatus("error");
           return;
         }
