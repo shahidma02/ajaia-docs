@@ -26,6 +26,3 @@ export async function api<T>(
 }
 
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong.");
-
-export const initials = (name: string) =>
-  name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();

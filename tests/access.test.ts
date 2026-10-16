@@ -29,6 +29,7 @@ describe("document access control", () => {
     await docs.shareDoc(id, "alice", "BOB@ajaia.test", "viewer"); // email match is case-insensitive
     const doc = await docs.getDoc(id, "bob");
     expect(doc.role).toBe("viewer");
+    expect(doc.shareCount).toBe(1);
     expect(await status(docs.updateDoc(id, "bob", { content: "<p>hack</p>", version: doc.version }))).toBe(403);
     expect((await docs.listDocs("bob")).shared.map((d) => d.id)).toContain(id);
   });

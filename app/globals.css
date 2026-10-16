@@ -141,6 +141,21 @@ input[type="email"] {
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner svg { animation-duration: 2.4s; } }
 
+/* Skeleton placeholders */
+.sk {
+  display: inline-block;
+  color: transparent;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eceef1 25%, #f6f7f9 37%, #eceef1 63%) 0 0 / 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+.avatar.sk { color: transparent; }
+.sk-name { width: 110px; }
+.sk-email { width: 140px; margin-top: 2px; }
+.sk-control { width: 104px; height: 28px; border-radius: 8px; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+
 /* Sign-in */
 .signin p { margin: 12px 0 20px; }
 .user-pick { width: 100%; gap: 12px; padding: 10px 14px; text-align: left; border-color: var(--border); }
@@ -303,6 +318,7 @@ input[type="email"] {
   .doc-header { flex-wrap: wrap; }
   .title-input { order: 1; flex-basis: 100%; font-size: 16px; }
   .doc-header .status { margin-left: auto; }
+  .hide-sm { display: none; }
   .page { padding: 28px 20px; }
   .toolbar { position: static; }
   .backdrop { display: block; position: fixed; inset: 0; z-index: 20; background: rgb(16 24 40 / 0.4); }
@@ -319,3 +335,12 @@ input[type="email"] {
   }
 }
 @keyframes sheet-in { from { transform: translateY(100%); } }
+
+/* Export PDF: print only the document page */
+@page { margin: 18mm; }
+@media print {
+  body { background: #fff; }
+  .doc-header, .toolbar, .banner, .panel, .backdrop, [data-sonner-toaster] { display: none !important; }
+  .doc-main { padding: 0; }
+  .page { max-width: none; min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
+}

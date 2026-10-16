@@ -3,10 +3,23 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
-import { api, errorMessage, initials } from "@/lib/client";
+import Avatar from "@/components/Avatar";
+import { RoleBadge, RoleSelect } from "@/components/Role";
+import { PersonRowSkeleton } from "@/components/Skeleton";
+import { api, errorMessage } from "@/lib/client";
 import type { Doc, Share, User } from "@/lib/docs";
 
-export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => void }) {
+export default function SharePanel({
+  doc,
+  shareCount,
+  onShareCount,
+  onClose,
+}: {
+  doc: Doc;
+  shareCount: number; // last known number of shares, so the skeleton reserves exactly the right space
+  onShareCount: (n: number) => void;
+  onClose: () => void;
+}) {
   const [shares, setShares] = useState<Share[] | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
@@ -16,9 +29,15 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
   const base = `/api/documents/${doc.id}/shares`;
 
   useEffect(() => {
-    api<Share[]>(base).then(setShares, (e) => toast.error(errorMessage(e)));
+    api<Share[]>(base).then(
+      (list) => {
+        setShares(list);
+        onShareCount(list.length);
+      },
+      (e) => toast.error(errorMessage(e)),
+    );
     api<{ users: User[] }>("/api/session").then((s) => setUsers(s.users), () => {});
-  }, [base]);
+  }, [base, onShareCount]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -29,7 +48,9 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
   async function mutate(method: "POST" | "DELETE", body: unknown, success: string) {
     setBusy(true);
     try {
-      setShares(await api<Share[]>(base, { method, body }));
+      const list = await api<Share[]>(base, { method, body });
+      setShares(list);
+      onShareCount(list.length);
       if (method === "POST") setEmail("");
       toast.success(success);
     } catch (e) {
@@ -73,10 +94,7 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
                 <option key={u.id} value={u.email}>{u.name}</option>
               ))}
             </datalist>
-            <select value={role} onChange={(e) => setRole(e.target.value as Share["role"])} aria-label="Access level">
-              <option value="editor">Can edit</option>
-              <option value="viewer">Can view</option>
-            </select>
+            <RoleSelect value={role} onChange={setRole} label="Access level" />
             <button className="primary" disabled={busy}>Share</button>
           </form>
         )}
@@ -84,30 +102,26 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
         <h3>People with access</h3>
         <ul className="people">
           <li>
-            <span className="avatar sm">{initials(doc.ownerName)}</span>
+            <Avatar name={doc.ownerName} small />
             <span className="person"><strong>{doc.ownerName}</strong></span>
-            <span className="badge owner">Owner</span>
+            <RoleBadge role="owner" />
           </li>
+          {shares === null && Array.from({ length: shareCount }, (_, i) => <PersonRowSkeleton key={i} />)}
           {shares?.map((s) => (
             <li key={s.userId}>
-              <span className="avatar sm">{initials(s.name)}</span>
+              <Avatar name={s.name} small />
               <span className="person">
                 <strong>{s.name}</strong>
                 <span className="muted">{s.email}</span>
               </span>
               {isOwner ? (
                 <span className="row">
-                  <select
+                  <RoleSelect
                     value={s.role}
                     disabled={busy}
-                    aria-label={`Access for ${s.name}`}
-                    onChange={(e) =>
-                      mutate("POST", { email: s.email, role: e.target.value }, `${s.name} can now ${e.target.value === "editor" ? "edit" : "view"}`)
-                    }
-                  >
-                    <option value="editor">Can edit</option>
-                    <option value="viewer">Can view</option>
-                  </select>
+                    label={`Access for ${s.name}`}
+                    onChange={(r) => mutate("POST", { email: s.email, role: r }, `${s.name} can now ${r === "editor" ? "edit" : "view"}`)}
+                  />
                   <button
                     className="icon-btn"
                     disabled={busy}
@@ -119,14 +133,12 @@ export default function SharePanel({ doc, onClose }: { doc: Doc; onClose: () => 
                   </button>
                 </span>
               ) : (
-                <span className="badge">{s.role === "editor" ? "Can edit" : "Can view"}</span>
+                <RoleBadge role={s.role} />
               )}
             </li>
           ))}
         </ul>
-        {/* No loading placeholder: the owner row is known up front and shared rows just appear,
-            so an unshared doc doesn't flash a row that immediately disappears. */}
-        {isOwner && shares?.length === 0 && <p className="muted small">Not shared with anyone yet.</p>}
+        {isOwner && (shares?.length ?? shareCount) === 0 && <p className="muted small">Not shared with anyone yet.</p>}
         {!isOwner && <p className="muted small">Only the owner can change who has access.</p>}
       </aside>
     </>

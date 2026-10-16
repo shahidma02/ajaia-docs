@@ -1,12 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Plus, Trash2, Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
+import Avatar from "@/components/Avatar";
+import DocList from "@/components/DocList";
+import Logo from "@/components/Logo";
+import SignInCard from "@/components/SignInCard";
 import Spinner from "@/components/Spinner";
-import { api, errorMessage, initials } from "@/lib/client";
+import { api, errorMessage } from "@/lib/client";
 import type { Doc, DocSummary, User } from "@/lib/docs";
 
 type Session = { user: User | null; users: User[] };
@@ -100,24 +103,7 @@ export default function Home() {
   if (!session.user) {
     return (
       <main className="center">
-        <div className="card signin">
-          <div className="brand">
-            <span className="logo-mark"><FileText size={20} /></span>
-            <h1>Ajaia Docs</h1>
-          </div>
-          <p className="muted">Choose a demo account to continue. This is mock sign-in for review, so there are no passwords.</p>
-          <div className="stack">
-            {session.users.map((u) => (
-              <button key={u.id} className="user-pick" disabled={busy} onClick={() => signIn(u.id)}>
-                <span className="avatar">{initials(u.name)}</span>
-                <span className="user-pick-text">
-                  <strong>{u.name}</strong>
-                  <span className="muted">{u.email}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <SignInCard users={session.users} busy={busy} onPick={signIn} />
       </main>
     );
   }
@@ -125,12 +111,9 @@ export default function Home() {
   return (
     <>
       <header className="app-header">
-        <span className="brand">
-          <span className="logo-mark"><FileText size={18} /></span>
-          <span className="logo">Ajaia Docs</span>
-        </span>
+        <Logo />
         <label className="user-switch">
-          <span className="avatar sm">{initials(session.user.name)}</span>
+          <Avatar name={session.user.name} small />
           <select value={session.user.id} disabled={busy} onChange={(e) => signIn(e.target.value)} aria-label="Switch user">
             {session.users.map((u) => (
               <option key={u.id} value={u.id}>{u.name}</option>
@@ -162,54 +145,9 @@ export default function Home() {
         </div>
         <p className="muted hint">Import turns a .txt, .md or .docx file (up to {MAX_UPLOAD_MB} MB) into a new editable document.</p>
 
-        <DocSection title="My documents" docs={docs?.owned} empty="No documents yet. Create one or import a file." onDelete={deleteDoc} />
-        <DocSection title="Shared with me" docs={docs?.shared} empty="Nothing has been shared with you yet." />
+        <DocList title="My documents" docs={docs?.owned ?? []} empty="No documents yet. Create one or import a file." onDelete={deleteDoc} />
+        <DocList title="Shared with me" docs={docs?.shared ?? []} empty="Nothing has been shared with you yet." />
       </main>
     </>
-  );
-}
-
-function DocSection({
-  title,
-  docs,
-  empty,
-  onDelete,
-}: {
-  title: string;
-  docs?: DocSummary[];
-  empty: string;
-  onDelete?: (d: DocSummary) => void;
-}) {
-  return (
-    <section>
-      <h2>{title}</h2>
-      {!docs ? (
-        <Spinner size={22} />
-      ) : docs.length === 0 ? (
-        <p className="muted empty">{empty}</p>
-      ) : (
-        <ul className="doc-list">
-          {docs.map((d) => (
-            <li key={d.id}>
-              <Link href={`/documents/${d.id}`} className="doc-link">
-                <span className="doc-icon"><FileText size={18} /></span>
-                <span className="doc-text">
-                  <span className="doc-title">{d.title}</span>
-                  <span className="muted">
-                    {d.role === "owner" ? "" : `${d.ownerName} · `}edited {new Date(d.updatedAt).toLocaleString()}
-                  </span>
-                </span>
-              </Link>
-              {d.role !== "owner" && <span className={`badge ${d.role}`}>{d.role === "editor" ? "Can edit" : "Can view"}</span>}
-              {onDelete && (
-                <button className="icon-btn" onClick={() => onDelete(d)} title="Delete" aria-label={`Delete ${d.title}`}>
-                  <Trash2 size={18} />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }

@@ -1,26 +1,24 @@
 "use client";
 
-import { ArrowLeft, Check, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Check, FileDown, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Editor from "@/components/Editor";
+import { RoleBadge } from "@/components/Role";
 import SharePanel from "@/components/SharePanel";
 import Spinner from "@/components/Spinner";
-import { toast } from "sonner";
+import { useAutosave, type SaveStatus } from "@/hooks/useAutosave";
 import { api, ApiError, errorMessage } from "@/lib/client";
 import type { Doc } from "@/lib/docs";
 
-type Status = "saved" | "dirty" | "saving" | "error" | "conflict";
-const STATUS_TEXT: Record<Status, string> = {
+const STATUS_TEXT: Record<SaveStatus, string> = {
   saved: "Saved",
   dirty: "Unsaved changes…",
   saving: "Saving…",
   error: "Save failed — retrying…",
   conflict: "Not saved — document changed elsewhere",
 };
-const SAVE_DELAY_MS = 800; // save once typing pauses…
-const MAX_WAIT_MS = 5000; // …but at least this often during non-stop typing
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,97 +26,24 @@ export default function DocumentPage() {
   const [doc, setDoc] = useState<Doc | null>(null);
   const [loadError, setLoadError] = useState("");
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState<Status>("saved");
   const [showShare, setShowShare] = useState(false);
-  const [saveError, setSaveError] = useState("");
-
-  // Autosave: edits accumulate in `pending`, flush after a short pause; saves run one at a time.
-  const version = useRef(0);
-  const pending = useRef<{ title?: string; content?: string }>({});
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const chain = useRef<Promise<void>>(Promise.resolve());
-  const conflicted = useRef(false);
-  const dirtySince = useRef(0);
+  const [shareCount, setShareCount] = useState(0);
+  const { status, error: saveError, queue, setVersion } = useAutosave(id);
 
   useEffect(() => {
     api<Doc>(`/api/documents/${id}`).then(
       (d) => {
-        version.current = d.version;
+        setVersion(d.version);
         setDoc(d);
         setTitle(d.title);
+        setShareCount(d.shareCount);
       },
       (e) => {
         if (e instanceof ApiError && e.status === 401) router.replace("/");
         else setLoadError(errorMessage(e));
       },
     );
-  }, [id, router]);
-
-  const flush = useCallback(() => {
-    clearTimeout(timer.current);
-    chain.current = chain.current.then(async () => {
-      const patch = pending.current;
-      if (conflicted.current || Object.keys(patch).length === 0) return;
-      pending.current = {};
-      setSaveError("");
-      setStatus("saving");
-      // Retry transient failures (network / 5xx) with backoff; 4xx won't fix itself, so surface it.
-      for (let attempt = 0; ; attempt++) {
-        try {
-          const saved = await api<Doc>(`/api/documents/${id}`, {
-            method: "PATCH",
-            body: { ...patch, version: version.current },
-            keepalive: true, // let the last save finish if the user navigates away
-          });
-          version.current = saved.version;
-          setStatus(Object.keys(pending.current).length ? "dirty" : "saved");
-          return;
-        } catch (e) {
-          const code = e instanceof ApiError ? e.status : 0;
-          if (code === 409) {
-            conflicted.current = true;
-            setStatus("conflict");
-            return;
-          }
-          if ((code === 0 || code >= 500) && attempt < 3) {
-            setStatus("error");
-            await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
-            continue;
-          }
-          pending.current = { ...patch, ...pending.current }; // keep edits; next change retries
-          setSaveError(errorMessage(e));
-          toast.error(`Couldn't save: ${errorMessage(e)}`);
-          setStatus("error");
-          return;
-        }
-      }
-    });
-  }, [id]);
-
-  const queue = useCallback(
-    (patch: { title?: string; content?: string }) => {
-      if (conflicted.current) return;
-      if (Object.keys(pending.current).length === 0) dirtySince.current = Date.now();
-      Object.assign(pending.current, patch);
-      setStatus("dirty");
-      clearTimeout(timer.current);
-      const overdue = Date.now() - dirtySince.current >= MAX_WAIT_MS;
-      timer.current = setTimeout(flush, overdue ? 0 : SAVE_DELAY_MS);
-    },
-    [flush],
-  );
-
-  // Save on leave, and warn if the tab is closed with unsaved edits.
-  useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => {
-      if (Object.keys(pending.current).length) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => {
-      window.removeEventListener("beforeunload", warn);
-      flush();
-    };
-  }, [flush]);
+  }, [id, router, setVersion]);
 
   if (loadError) {
     return (
@@ -133,6 +58,15 @@ export default function DocumentPage() {
   if (!doc) return <main className="center"><Spinner label="Loading document" /></main>;
 
   const editable = doc.role !== "viewer";
+
+  // ponytail: PDF export = the browser's print dialog ("Save as PDF") + print CSS that shows only the page.
+  // Real file generation (server-side PDF) only if users need it without the dialog.
+  const exportPdf = () => {
+    const prev = document.title;
+    document.title = title.trim() || "Untitled document"; // browsers use this as the default PDF file name
+    window.addEventListener("afterprint", () => (document.title = prev), { once: true });
+    window.print();
+  };
 
   return (
     <>
@@ -161,9 +95,11 @@ export default function DocumentPage() {
           {status === "saved" && editable && <Check size={14} />}
           {!editable ? "View only" : saveError ? `Not saved: ${saveError}` : STATUS_TEXT[status]}
         </span>
-        <span className={`badge ${doc.role}`}>
-          {doc.role === "owner" ? "Owner" : doc.role === "editor" ? "Shared · can edit" : "Shared · can view"}
-        </span>
+        <RoleBadge role={doc.role} />
+        <button onClick={exportPdf} title="Export as PDF" aria-label="Export as PDF">
+          <FileDown size={16} />
+          <span className="hide-sm">Export PDF</span>
+        </button>
         <button className="primary" onClick={() => setShowShare((v) => !v)} aria-expanded={showShare}>
           {doc.role === "owner" ? <UserPlus size={16} /> : <Users size={16} />}
           {doc.role === "owner" ? "Share" : "People"}
@@ -184,7 +120,9 @@ export default function DocumentPage() {
         <main className="doc-main">
           <Editor content={doc.content} editable={editable} onChange={(html) => queue({ content: html })} />
         </main>
-        {showShare && <SharePanel doc={doc} onClose={() => setShowShare(false)} />}
+        {showShare && (
+          <SharePanel doc={doc} shareCount={shareCount} onShareCount={setShareCount} onClose={() => setShowShare(false)} />
+        )}
       </div>
     </>
   );

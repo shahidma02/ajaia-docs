@@ -4,13 +4,14 @@ import { HttpError } from "./http";
 export type Role = "owner" | "editor" | "viewer";
 export type User = { id: string; name: string; email: string };
 export type DocSummary = { id: string; title: string; updatedAt: string; ownerName: string; role: Role };
-export type Doc = DocSummary & { content: string; version: number; ownerId: string };
+export type Doc = DocSummary & { content: string; version: number; ownerId: string; shareCount: number };
 export type Share = { userId: string; name: string; email: string; role: "viewer" | "editor" };
 
 export const MAX_TITLE = 200;
 export const MAX_CONTENT = 1_000_000; // ~1 MB of HTML
 
-const DOC_COLUMNS = `d.id, d.title, d.content, d.version, d.owner_id, d.updated_at, u.name AS owner_name`;
+const DOC_COLUMNS = `d.id, d.title, d.content, d.version, d.owner_id, d.updated_at, u.name AS owner_name,
+  (SELECT COUNT(*) FROM shares x WHERE x.document_id = d.id) AS share_count`;
 
 function toDoc(r: Record<string, unknown>, role: Role): Doc {
   return {
@@ -21,6 +22,7 @@ function toDoc(r: Record<string, unknown>, role: Role): Doc {
     ownerId: String(r.owner_id),
     ownerName: String(r.owner_name),
     updatedAt: String(r.updated_at),
+    shareCount: Number(r.share_count),
     role,
   };
 }
