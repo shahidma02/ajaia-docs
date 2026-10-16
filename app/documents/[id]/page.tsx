@@ -4,18 +4,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Editor from "@/components/Editor";
+import Icon from "@/components/Icon";
 import SharePanel from "@/components/SharePanel";
+import { toast } from "@/components/Toaster";
 import { api, ApiError, errorMessage } from "@/lib/client";
 import type { Doc } from "@/lib/docs";
 
 type Status = "saved" | "dirty" | "saving" | "error" | "conflict";
 const STATUS_TEXT: Record<Status, string> = {
-  saved: "All changes saved",
+  saved: "Saved",
   dirty: "Unsaved changes…",
   saving: "Saving…",
   error: "Save failed — retrying…",
   conflict: "Not saved — document changed elsewhere",
 };
+const SAVE_DELAY_MS = 800; // save once typing pauses…
+const MAX_WAIT_MS = 5000; // …but at least this often during non-stop typing
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +37,7 @@ export default function DocumentPage() {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const chain = useRef<Promise<void>>(Promise.resolve());
   const conflicted = useRef(false);
+  const dirtySince = useRef(0);
 
   useEffect(() => {
     api<Doc>(`/api/documents/${id}`).then(
@@ -81,6 +86,7 @@ export default function DocumentPage() {
           }
           pending.current = { ...patch, ...pending.current }; // keep edits; next change retries
           setSaveError(errorMessage(e));
+          toast(`Couldn't save: ${errorMessage(e)}`);
           setStatus("error");
           return;
         }
@@ -91,10 +97,12 @@ export default function DocumentPage() {
   const queue = useCallback(
     (patch: { title?: string; content?: string }) => {
       if (conflicted.current) return;
+      if (Object.keys(pending.current).length === 0) dirtySince.current = Date.now();
       Object.assign(pending.current, patch);
       setStatus("dirty");
       clearTimeout(timer.current);
-      timer.current = setTimeout(flush, 800);
+      const overdue = Date.now() - dirtySince.current >= MAX_WAIT_MS;
+      timer.current = setTimeout(flush, overdue ? 0 : SAVE_DELAY_MS);
     },
     [flush],
   );
@@ -114,19 +122,23 @@ export default function DocumentPage() {
   if (loadError) {
     return (
       <main className="center">
-        <p className="error">{loadError}</p>
-        <Link href="/">← Back to documents</Link>
+        <div className="card stack">
+          <p className="error">{loadError}</p>
+          <Link href="/" className="row"><Icon name="back" /> Back to documents</Link>
+        </div>
       </main>
     );
   }
-  if (!doc) return <main className="center muted">Loading document…</main>;
+  if (!doc) return <main className="center"><p className="muted">Loading document…</p></main>;
 
   const editable = doc.role !== "viewer";
 
   return (
     <>
       <header className="doc-header">
-        <Link href="/" className="back" title="All documents">←</Link>
+        <Link href="/" className="icon-btn" title="All documents" aria-label="Back to all documents">
+          <Icon name="back" size={20} />
+        </Link>
         <input
           className="title-input"
           value={title}
@@ -145,12 +157,14 @@ export default function DocumentPage() {
           }}
         />
         <span className={`status ${status}`} aria-live="polite">
+          {status === "saved" && editable && <Icon name="check" size={14} />}
           {!editable ? "View only" : saveError ? `Not saved: ${saveError}` : STATUS_TEXT[status]}
         </span>
         <span className={`badge ${doc.role}`}>
           {doc.role === "owner" ? "Owner" : doc.role === "editor" ? "Shared · can edit" : "Shared · can view"}
         </span>
-        <button className="primary" onClick={() => setShowShare((v) => !v)}>
+        <button className="primary" onClick={() => setShowShare((v) => !v)} aria-expanded={showShare}>
+          <Icon name={doc.role === "owner" ? "share" : "users"} size={16} />
           {doc.role === "owner" ? "Share" : "People"}
         </button>
       </header>
